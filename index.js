@@ -131,6 +131,16 @@ class Message {
     }
   }
 
+  self(message, options = {}) {
+    options.target = 'self'
+    return this.send(message, options)
+  }
+
+  update(messageId, message, options = {}) {
+    options.edit = messageId
+    return this.send(message, options)
+  }
+
   button(text, data = {}) {
     return { 'text': text, 'data': data }
   }
