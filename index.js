@@ -172,9 +172,11 @@ function hashPayload(collectionId, payload = {}) {
   }
 
   const hash = md5(JSON.stringify(payload)).toString()
+  const hashedPayload = { [HASHED_COLLECTION_KEY]: collectionId, [HASHED_PAYLOAD_KEY]: hash }
 
   HASHED_PAYLOAD[collectionId][hash] = payload
-  return { [HASHED_COLLECTION_KEY]: collectionId, [HASHED_PAYLOAD_KEY]: hash }
+
+  return JSON.stringify(hashedPayload)
 }
 
 function pullPayload(data) {
