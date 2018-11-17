@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/mikatakana/telegram-bot-tpl#readme",
   "dependencies": {
-    "node-telegram-bot-api": "git://github.com/datichto/node-telegram-bot-api.git#socks5-proxy"
+    "node-telegram-bot-api": "git://github.com/datichto/node-telegram-bot-api.git#socks5-proxy",
+    "crypto-js": "^3.1.9-1"
   }
 }

@@ -1,4 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api')
+const md5 = require('crypto-js/md5')
 
 const ROOT_COMMAND = '/'
 
@@ -19,7 +20,7 @@ class Bot {
     })
 
     bot.on('callback_query', (msg) => {
-      const data = JSON.parse(msg.data)
+      const data = pullPayload(msg.data)
 
       if (typeof data.alert === 'string') {
         bot.answerCallbackQuery(msg.id, { text: data.alert })
@@ -27,9 +28,9 @@ class Bot {
         bot.answerCallbackQuery(msg.id)
       }
 
-      if (typeof commands[data['@']] === 'function') {
+      if (typeof commands[data.action] === 'function') {
         const message = new Message(bot, msg.message, data)
-        commands[data['@']](message)
+        commands[data.action](message)
       }
     })
 
@@ -69,6 +70,7 @@ class Message {
 
       // Keyboard
       if (options.buttons) {
+        const collectionId = uniqid()
         markup.inline_keyboard = options.buttons.map((buttonsRow) => {
           return buttonsRow.map((button) => {
             const data = Object.assign({ 'action': options.action }, button.data)
@@ -80,14 +82,9 @@ class Message {
               }
             }
 
-            if (data.hasOwnProperty('action')) {
-              data['@'] = data['action']
-              delete data['action']
-            }
-
             return {
               'text': button.text,
-              'callback_data': JSON.stringify(data)
+              'callback_data': hashPayload(collectionId, data)
             }
           })
         })
@@ -162,6 +159,43 @@ class Message {
   buttonsCol(buttons) {
     return this.buttons(buttons, 1)
   }
+}
+
+let HASHED_PAYLOAD = {}
+
+const HASHED_COLLECTION_KEY = '[]'
+const HASHED_PAYLOAD_KEY = '#'
+
+function hashPayload(collectionId, payload = {}) {
+  if (HASHED_PAYLOAD.hasOwnProperty(collectionId) === false) {
+    HASHED_PAYLOAD[collectionId] = {}
+  }
+
+  const hash = md5(JSON.stringify(payload)).toString()
+
+  HASHED_PAYLOAD[collectionId][hash] = payload
+  return { [HASHED_COLLECTION_KEY]: collectionId, [HASHED_PAYLOAD_KEY]: hash }
+}
+
+function pullPayload(data) {
+  const json = JSON.parse(data)
+
+  const collectionId = json[HASHED_COLLECTION_KEY]
+  const payloadKey = json[HASHED_PAYLOAD_KEY]
+
+  const payload = HASHED_PAYLOAD[collectionId][payloadKey]
+  delete HASHED_PAYLOAD[collectionId]
+
+  return payload
+}
+
+function uniqid() {
+    this.seed = function (s, w) {
+        s = parseInt(s, 10).toString(16)
+        return w < s.length ? s.slice(s.length - w) : (w > s.length) ? new Array(1 + (w - s.length)).join('0') + s : s
+    }
+
+    return this.seed(parseInt(new Date().getTime() / 1000, 10), 8) + this.seed(Math.floor(Math.random() * 0x75bcd15) + 1, 5)
 }
 
 module.exports = Bot
